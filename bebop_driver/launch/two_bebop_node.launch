@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<launch>
+   
+    <arg name="drone_type" default="bebop1" /> 
+    <arg name="config_file" default="$(find bebop_driver)/config/defaults.yaml" />
+    <arg name="camera_info_url" default="package://bebop_driver/data/$(arg drone_type)_camera_calib.yaml" />
+
+
+   
+    <arg name="aruco_list_file" default="$(find aruco_eye_ros)/config/arUcoList.xml"/>
+    <arg name="camera_calibration_file" default="$(find aruco_eye_ros)/config/camera.yml"/>
+    <arg name="aruco_detector_frame_name" default="aruco_detector"/>
+    <arg name="aruco_marker_child_base_name" default="aruco_marker_"/>
+    <arg name="image_topic_name1"    default="/bebop1/bebop/image_raw" />
+    <arg name="image_topic_name2"    default="/bebop2/bebop/image_raw" />
+    <arg name="aruco_list_topic_name"   default="aruco_eye/aruco_observation" />
+    
+    <group ns="bebop1">
+        <node pkg="bebop_driver" name="bebop_driver" type="bebop_driver_node" output="screen">
+            <param name="camera_info_url" value="$(arg camera_info_url)" />
+            <param name="bebop_ip" value="192.168.0.119" />
+            <rosparam command="load" file="$(arg config_file)" />
+        </node>
+
+        <node name="aruco_eye_ros_node1" pkg="aruco_eye_ros" type="aruco_eye_ros_detector" output="screen">
+            <param name="aruco_list_file" value="$(arg aruco_list_file)" type="string"/>
+            <param name="camera_calibration_file" value="$(arg camera_calibration_file)" type="string"/>
+            <param name="aruco_detector_frame_name" value="$(arg aruco_detector_frame_name)" type="string"/>
+            <param name="aruco_marker_child_base_name" value="$(arg aruco_marker_child_base_name)" type="string"/>
+            <param name="image_topic_name" value="$(arg image_topic_name1)" type="string"/>
+            <param name="aruco_list_topic_name" value="$(arg aruco_list_topic_name)" type="string"/>
+        </node>
+
+        <include file="$(find aruco_navigation)/launch/get_pos_from_aruco.launch">
+            <arg name="observation_topic_name"  value="/bebop1/aruco_eye/aruco_observation" />
+            <arg name="position_kf_topic_name"  value="/bebop1/pos_uav_kf" />
+        </include>
+        <include file="$(find bebop_controller)/launch/control_bebop.launch">
+        </include>
+   
+    </group>
+
+    <group ns="bebop2">
+         <node pkg="bebop_driver" name="bebop_driver" type="bebop_driver_node" output="screen">
+            <param name="camera_info_url" value="$(arg camera_info_url)" />
+            <param name="bebop_ip" value="192.168.0.119" />
+            <rosparam command="load" file="$(arg config_file)" />
+        </node>
+        <node name="aruco_eye_ros_node1" pkg="aruco_eye_ros" type="aruco_eye_ros_detector" output="screen">
+            <param name="aruco_list_file" value="$(arg aruco_list_file)" type="string"/>
+            <param name="camera_calibration_file" value="$(arg camera_calibration_file)" type="string"/>
+            <param name="aruco_detector_frame_name" value="$(arg aruco_detector_frame_name)" type="string"/>
+            <param name="aruco_marker_child_base_name" value="$(arg aruco_marker_child_base_name)" type="string"/>
+            <param name="image_topic_name" value="$(arg image_topic_name2)" type="string"/>
+            <param name="aruco_list_topic_name" value="$(arg aruco_list_topic_name)" type="string"/>
+        </node>
+
+        <include file="$(find aruco_navigation)/launch/get_pos_from_aruco.launch">
+            <arg name="observation_topic_name"  value="/bebop2/aruco_eye/aruco_observation" />
+            <arg name="position_kf_topic_name"  value="/bebop2/pos_uav_kf" />
+        </include>
+
+        <include file="$(find bebop_tools)/launch/joy_teleop.launch">
+            <arg name="namespace" default="/bebop2/bebop" />
+        </include>
+    </group>
+
+
+
+</launch>
